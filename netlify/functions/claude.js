@@ -12,17 +12,30 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: { message: 'Method not allowed' } }),
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: { type: 'method_not_allowed', message: 'Only POST allowed' } }),
     };
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  if (!apiKey || apiKey.length < 20) {
     return {
       statusCode: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: { message: 'Server not configured: missing ANTHROPIC_API_KEY' } }),
+      body: JSON.stringify({
+        error: {
+          type: 'config_error',
+          message: 'ANTHROPIC_API_KEY not set in Netlify environment variables. Go to Site configuration → Environment variables.',
+        },
+      }),
+    };
+  }
+
+  if (!event.body) {
+    return {
+      statusCode: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: { type: 'no_body', message: 'Request body is empty' } }),
     };
   }
 
@@ -37,17 +50,24 @@ exports.handler = async (event) => {
       body: event.body,
     });
 
-    const data = await response.text();
+    const text = await response.text();
+
     return {
       statusCode: response.status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: data,
+      body: text,
     };
   } catch (err) {
     return {
       statusCode: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: { message: 'Proxy error: ' + err.message } }),
+      body: JSON.stringify({
+        error: {
+          type: 'proxy_error',
+          message: err.message || 'Unknown proxy error',
+          stack: err.stack ? err.stack.substring(0, 500) : null,
+        },
+      }),
     };
   }
 };
