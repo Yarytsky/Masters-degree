@@ -64,7 +64,7 @@ function rAIChecker(){
 
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
         ${txt?`<button class="btn btn-s btn-sm" onclick="S.aiCheckText='';S.aiCheckResult=null;render()">${ico('trash',12)} Очистити</button>`:''}
-        <button class="btn btn-p" onclick="runAICheck()" ${!minOk?'disabled':''} style="${!minOk?'opacity:.4;pointer-events:none':''}">
+        <button class="btn btn-p" onclick="S.aiCheckText=document.getElementById('ai-txt')?.value||S.aiCheckText;runAICheck()">
           ${ico('ai',13)} Запустити перевірку
         </button>
       </div>
@@ -381,6 +381,8 @@ function resetAICheck(){
 }
 
 function updateAIStats(){
+  const el=document.getElementById('ai-txt');
+  if(el)S.aiCheckText=el.value;
   const bar=document.getElementById('ai-stats-bar');
   if(!bar)return;
   const stats=S.aiCheckText?textStats(S.aiCheckText):null;
