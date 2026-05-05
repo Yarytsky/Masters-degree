@@ -440,8 +440,32 @@ function rStudGrades(){
   </div>`;}
 
 /* ─── ASSIGNMENT ─── */
+function getVariantForStudent(asgn, studentName){
+  if(!asgn||!asgn.qs||!asgn.qs.length)return asgn;
+  let seed=0;
+  for(let i=0;i<studentName.length;i++)seed=(seed*31+studentName.charCodeAt(i))>>>0;
+  function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;}
+  function shuffle(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(rand()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+  const shuffledQs=shuffle(asgn.qs).map((q,newIdx)=>{
+    if(q.type!=='choice'||!q.opts||q.opts.length<2)return {...q,id:newIdx+1};
+    const correctOpt=q.opts[q.ok];
+    const shuffledOpts=shuffle(q.opts);
+    const newOk=shuffledOpts.indexOf(correctOpt);
+    return {...q,id:newIdx+1,opts:shuffledOpts,ok:newOk};
+  });
+  return {...asgn,qs:shuffledQs};
+}
+
 function rStudAsgn(){
-  const a=getAsgn(S.asId);if(!a)return'';
+  const baseAsgn=getAsgn(S.asId);if(!baseAsgn)return'';
+  const a=getVariantForStudent(baseAsgn,ME());
   const s=getSub(a.sid);
   if(S.qDone)return rStudResult();
   const hasFile=a.file&&a.file.length>0;
@@ -451,7 +475,7 @@ function rStudAsgn(){
       <span class="bcs">›</span><span class="bcc">${a.title}</span>
     </div>
     <div class="ph" style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <div><div class="pt" style="font-size:1.2rem">${a.title}</div><div class="ps">${s.n} · ${a.tmin}хв · ${a.qs.length}пит.</div></div>
+      <div><div class="pt" style="font-size:1.2rem">${a.title}</div><div class="ps">${s.n} · ${a.tmin}хв · ${a.qs.length}пит. · індивідуальний варіант</div></div>
       <span class="b ${tBdg(a.type)}">${tL(a.type)}</span>
     </div>
     ${hasFile?`<div class="ri" style="margin-bottom:14px;background:var(--abg);border-color:#F0D090">
@@ -462,7 +486,7 @@ function rStudAsgn(){
         <button class="btn btn-s btn-sm" onclick="toast('Завантажується…','ok')">Завантажити</button>
       </div>
     </div>`:''}
-    <div class="alert a-info">Оберіть відповіді та натисніть «Здати».</div>
+    <div class="alert a-info">Оберіть відповіді та натисніть «Здати». Кожен учень отримує власний варіант з різним порядком питань.</div>
     ${a.qs.map((q,qi)=>`
     <div class="card" style="margin-bottom:10px">
       <div style="font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin-bottom:7px">Питання ${qi+1} з ${a.qs.length}</div>
@@ -480,7 +504,9 @@ function rStudAsgn(){
   </div>`;}
 
 function submitQ(aid){
-  const a=getAsgn(aid);let sc=0;
+  const baseAsgn=getAsgn(aid);
+  const a=getVariantForStudent(baseAsgn,ME());
+  let sc=0;
   a.qs.forEach(q=>{if(q.type==='choice'&&S.qa[q.id]===q.ok)sc++;});
   const ch=a.qs.filter(q=>q.type==='choice').length;
   const pct=ch>0?Math.round(sc/ch*100):0;
