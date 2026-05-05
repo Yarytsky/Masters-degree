@@ -1,6 +1,7 @@
 function tQ(type,checked){
   if(checked&&!S.B.qtypes.includes(type))S.B.qtypes=[...S.B.qtypes,type];
   else if(!checked)S.B.qtypes=S.B.qtypes.filter(t=>t!==type);
+  render();
 }
 
 function saveA(){
