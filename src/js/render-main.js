@@ -37,14 +37,11 @@ function rSide(){
     {v:'quick-attend',l:'Відвідуваність',k:'attend'},
     {v:'ai-checker',l:'Перевірка на AI',k:'ai'},
     {v:'reports',l:'Звіти',k:'report'},
-    {sep:'Акаунт'},
-    {v:'account-t',l:'Мій профіль',k:'user'},
   ];
   const sItems=[
     {v:'home-s',l:'Головна',k:'home'},{v:'sched-s',l:'Розклад',k:'cal'},
     {v:'subjects-s',l:'Предмети',k:'book'},{v:'grades-s',l:'Оцінки',k:'grade'},
     {v:'analytics-s',l:'Аналітика',k:'chart'},
-    {v:'account-s',l:'Мій профіль',k:'user'},
   ];
   const items=isSt?sItems:tItems;
   const ri=i=>{
@@ -53,11 +50,20 @@ function rSide(){
     const oc=i.cls?`go('class',{tcid:'${i.cls}',ttab:'students'})`:`go('${i.v}')`;
     return`<button class="si${isAct?' act':''}" onclick="${oc}">${ico(i.k)} ${i.l}${i.dot?`<span class="bdot"></span>`:''}</button>`;
   };
+  const profileView=isSt?'account-s':'account-t';
+  const isProfileAct=S.view===profileView;
   return`<div class="side">
     <div class="slogo"><div class="slogo-mark">${ico('book',13)}</div><div><div class="slogo-txt">Osvita</div><div class="slogo-sub">${isSt?'Студент':'Вчитель'}</div></div></div>
     <div class="snav">${items.map(ri).join('')}</div>
     <div class="sfoot">
-      <div class="suser"><div class="savatar">${S.user.ini}</div><div><div class="suname">${S.user.name}</div><div class="surole">${isSt?'11-А':'Викладач'}</div></div></div>
+      <button class="suser${isProfileAct?' act':''}" onclick="go('${profileView}')" style="width:100%;text-align:left;background:${isProfileAct?'var(--bg2)':'transparent'};border-radius:var(--r2);padding:8px;cursor:pointer;border:none;display:flex;align-items:center;gap:10px">
+        <div class="savatar">${S.user.ini}</div>
+        <div style="flex:1;min-width:0">
+          <div class="suname">${S.user.name}</div>
+          <div class="surole" style="font-size:.7rem;color:var(--ink3)">${isSt?'11-А · Учень':'Викладач'}</div>
+        </div>
+        ${ico('user',13)}
+      </button>
       <button class="slogout" onclick="logout()">${ico('logout')} Вийти</button>
     </div>
   </div>`;}
@@ -78,6 +84,7 @@ function rMain(){
       'lesson-planner':rLessonPlanner,'lesson-detail':rLessonDetail,
       'quick-attend':rQuickAttend,'ai-checker':rAIChecker,
       'reports':rReports,'tres':rTeacherRes,
+      'account-t':rTeacherAccount,'teacher-info':rTeacherInfo,
     };
     return(m[S.view]||(() => ''))()||'';
   }
