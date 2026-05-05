@@ -11,12 +11,12 @@ function rBuilder(){
       <span class="bcc">Нове завдання</span>
     </div>
     <div class="ph"><div class="pt">Нове завдання</div><div class="ps">Створіть тест або контрольну вручну, або згенеруйте через AI</div></div>
-
+ 
     <div class="card" style="margin-bottom:12px">
       <div class="ct">Загальна інформація</div>
       <div class="fg">
         <label class="fl">Назва завдання</label>
-        <input class="fi" placeholder="Напр.: Тест з квадратних рівнянь" value="${b.title}" oninput="S.B.title=this.value"/>
+        <input class="fi" placeholder="Напр.: Тест з квадратних рівнянь" value="${b.title}" oninput="S.B.title=this.value" onblur="render()"/>
       </div>
       <div class="frow">
         <div class="fg">
@@ -37,15 +37,15 @@ function rBuilder(){
       <div class="frow">
         <div class="fg">
           <label class="fl">Дедлайн</label>
-          <input class="fi" type="date" value="${b.due}" min="2026-04-01" oninput="S.B.due=this.value"/>
+          <input class="fi" type="date" value="${b.due}" min="2026-04-01" oninput="S.B.due=this.value" onblur="render()"/>
         </div>
         <div class="fg">
           <label class="fl">Час на виконання (хв)</label>
-          <input class="fi" type="number" value="${b.tmin}" min="5" max="180" oninput="S.B.tmin=+this.value"/>
+          <input class="fi" type="number" value="${b.tmin}" min="5" max="180" oninput="S.B.tmin=+this.value;render()"/>
         </div>
       </div>
     </div>
-
+ 
     <div class="card" style="margin-bottom:12px">
       <div class="ct">Питання</div>
       <div class="tgl" style="margin-bottom:12px">
@@ -53,10 +53,10 @@ function rBuilder(){
         <button class="tglb${b.mode==='ai'?' act':''}" onclick="S.B.mode='ai';render()">${ico('ai',12)} Згенерувати з AI</button>
         <button class="tglb${b.mode==='manual'?' act':''}" onclick="S.B.mode='manual';if(!b.gen.length)S.B.gen=[{id:1,text:'',type:'choice',options:['','','',''],correct:0}];render()">${ico('edit',12)} Створити вручну</button>
       </div>
-
+ 
       ${b.mode==='upload'?rUploadMode(b):b.mode==='manual'?rManualMode(b):rAIMode(b)}
     </div>
-
+ 
     <div style="display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap">
       <button class="btn btn-s btn-sm" onclick="closeB()">Скасувати</button>
       ${b.gen.length>0?`<button class="btn btn-s btn-sm" onclick="S.B.step='preview';render()">${ico('eye',12)} Переглянути (${b.gen.length})</button>`:''}
@@ -64,7 +64,7 @@ function rBuilder(){
     </div>
   </div>`;
 }
-
+ 
 function rUploadMode(b){
   return`<div class="fz" onclick="document.getElementById('fBInp').click()" style="padding:32px 22px">
     <input type="file" id="fBInp" style="display:none" accept=".pdf,.doc,.docx" onchange="S.B.file=this.files[0]?.name;render()"/>
@@ -74,7 +74,7 @@ function rUploadMode(b){
     ${b.file?`<div style="margin-top:14px;padding:8px 12px;background:var(--gbg);border-radius:var(--r2);font-size:.78rem;color:var(--green);font-weight:600;display:inline-block">✓ ${b.file}</div>`:''}
   </div>`;
 }
-
+ 
 function rManualMode(b){
   return`<div>
     ${b.gen.map((q,i)=>`
@@ -103,32 +103,32 @@ function rManualMode(b){
     <button class="btn btn-s btn-sm" onclick="S.B.gen.push({id:Date.now(),text:'',type:'choice',options:['','','',''],correct:0});render()" style="width:100%">${ico('plus',12)} Додати питання</button>
   </div>`;
 }
-
+ 
 function rAIMode(b){
   return`<div>
     <div style="background:var(--blt);border-left:3px solid var(--blue);border-radius:var(--r2);padding:11px 13px;margin-bottom:14px">
       <div style="font-size:.72rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Як це працює</div>
       <div style="font-size:.78rem;color:var(--ink2);line-height:1.55">Вкажіть тему, складність та типи питань — AI згенерує готові завдання з відповідями. Згенеровані питання можна переглянути та відредагувати.</div>
     </div>
-
+ 
     <div class="frow">
       <div class="fg">
         <label class="fl">Тема <span style="color:var(--red)">*</span></label>
-        <input class="fi" placeholder="Напр.: Квадратні рівняння" value="${b.topic}" oninput="S.B.topic=this.value"/>
+        <input class="fi" placeholder="Напр.: Квадратні рівняння" value="${b.topic}" oninput="S.B.topic=this.value" onblur="render()"/>
       </div>
       <div class="fg">
         <label class="fl">Підтема (необовʼязково)</label>
-        <input class="fi" placeholder="Дискримінант, формула Вієта" value="${b.subtopic}" oninput="S.B.subtopic=this.value"/>
+        <input class="fi" placeholder="Дискримінант, формула Вієта" value="${b.subtopic}" oninput="S.B.subtopic=this.value" onblur="render()"/>
       </div>
     </div>
     <div class="fg">
       <label class="fl">Підручник / контекст (необовʼязково)</label>
-      <input class="fi" placeholder="Напр.: Алгебра 8 клас, Мерзляк, розділ 4" value="${b.book}" oninput="S.B.book=this.value"/>
+      <input class="fi" placeholder="Напр.: Алгебра 8 клас, Мерзляк, розділ 4" value="${b.book}" oninput="S.B.book=this.value" onblur="render()"/>
     </div>
     <div class="frow3">
       <div class="fg">
         <label class="fl">Кількість питань</label>
-        <input class="fi" type="number" value="${b.qcnt}" min="1" max="20" oninput="S.B.qcnt=+this.value"/>
+        <input class="fi" type="number" value="${b.qcnt}" min="1" max="20" oninput="S.B.qcnt=+this.value;render()"/>
       </div>
       <div class="fg">
         <label class="fl">Складність</label>
@@ -153,7 +153,7 @@ function rAIMode(b){
         <label class="cpill${b.qtypes.includes('open')?' on':''}"><input type="checkbox" onchange="tQ('open',this.checked)"${b.qtypes.includes('open')?' checked':''}/> Відкриті</label>
       </div>
     </div>
-
+ 
     ${b.loading?`<div style="background:var(--bg2);border-radius:var(--r2);padding:18px;margin-top:14px;text-align:center">
       <div style="display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:10px">
         <span class="spn" style="border-color:var(--bg3);border-top-color:var(--blue)"></span>
@@ -161,12 +161,12 @@ function rAIMode(b){
       </div>
       <div style="font-size:.78rem;color:var(--ink3)">Це може зайняти 10–20 секунд</div>
     </div>`:''}
-
+ 
     ${b.genError?`<div class="alert a-warn" style="margin-top:12px;font-size:.79rem">
       <b>Помилка:</b> ${b.genError}<br>
       <span style="font-size:.74rem">Спробуйте ще раз або створіть питання вручну</span>
     </div>`:''}
-
+ 
     ${b.gen.length>0?`<div style="background:var(--gbg);border-left:3px solid var(--green);border-radius:var(--r2);padding:11px 13px;margin-top:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <div>
@@ -176,16 +176,15 @@ function rAIMode(b){
         <button class="btn btn-s btn-sm" onclick="S.B.gen=[];render()">Очистити</button>
       </div>
     </div>`:''}
-
+ 
     <div style="display:flex;gap:9px;align-items:center;margin-top:14px;flex-wrap:wrap">
-      <button class="btn btn-p" onclick="genAI()" ${b.loading||!b.topic?'disabled':''} style="${!b.topic?'opacity:.4;pointer-events:none':''}">
+      <button class="btn btn-p" onclick="genAI()" ${b.loading?'disabled':''}>
         ${b.loading?'<span class="spn"></span> Генерую…':b.gen.length>0?ico('ai',13)+' Згенерувати знову':ico('ai',13)+' Згенерувати питання'}
       </button>
-      ${!b.topic?`<span style="font-size:.74rem;color:var(--ink3)">Спочатку вкажіть тему</span>`:''}
     </div>
   </div>`;
 }
-
+ 
 function rBuilderPrev(){
   const b=S.B;
   return`<div>
@@ -210,16 +209,16 @@ function rBuilderPrev(){
     </div>
   </div>`;
 }
-
+ 
 async function genAI(){
   const b=S.B;
   if(!b.topic||!b.topic.trim()){toast('Вкажіть тему','warn');return;}
   if(!b.qtypes||!b.qtypes.length){toast('Оберіть хоча б один тип питань','warn');return;}
-
+ 
   S.B.loading=true;
   S.B.genError=null;
   render();
-
+ 
   const dm={easy:'легка',medium:'середня',hard:'важка'};
   const subjectName=getSub(b.sid).n;
   const grade=b.gradeLevel||10;
@@ -229,9 +228,9 @@ async function genAI(){
   if(b.qtypes.includes('open'))types.push('відкриті');
   const typeStr=types.join(', ');
   const taskTypeName=b.type==='test'?'тесту':b.type==='control'?'контрольної роботи':'домашнього завдання';
-
+ 
   const prompt=`Ти — досвідчений учитель з предмету «${subjectName}» в українській школі. Твоє завдання — згенерувати ${b.qcnt} високоякісних питань для ${taskTypeName} в стилі НМТ/ЗНО.
-
+ 
 ПАРАМЕТРИ:
 - Предмет: ${subjectName}
 - Клас: ${grade}-й
@@ -239,7 +238,7 @@ async function genAI(){
 - Складність: ${dm[b.diff]}
 - Типи питань: ${typeStr}
 - Кількість: ${b.qcnt}
-
+ 
 ВИМОГИ ДО ПИТАНЬ:
 - Питання повинні бути чіткими, однозначними, без двозначностей
 - Для тестових питань: рівно 4 варіанти відповіді, тільки ОДНА правильна
@@ -251,9 +250,9 @@ async function genAI(){
 - Уникай питань про події після 2024 року
 - Для математики/фізики/хімії: формули записуй у текстовому форматі (не LaTeX)
 - ОБОВʼЯЗКОВО додавай коротке пояснення (1-2 речення) ЧОМУ це правильна відповідь
-
+ 
 ФОРМАТ ВІДПОВІДІ — СТРОГО ВАЛІДНИЙ JSON МАСИВ, БЕЗ ТЕКСТУ ПОЗА НИМ, БЕЗ КОДОВИХ БЛОКІВ:
-
+ 
 [
   {
     "id": 1,
@@ -278,11 +277,11 @@ async function genAI(){
     "explanation": "Очікувана модельна відповідь або ключові пункти"
   }
 ]
-
+ 
 Згенеруй рівно ${b.qcnt} питань зі вказаних типів.`;
-
+ 
   let result=null;let lastErr='';
-
+ 
   for(let attempt=0;attempt<2;attempt++){
     try{
       const r=await fetch('/api/claude',{
@@ -320,7 +319,7 @@ async function genAI(){
       lastErr=e.message||'Помилка мережі';
     }
   }
-
+ 
   if(!result){
     result=localGenerateQuestions(b);
     S.B._fallback=true;
@@ -334,7 +333,7 @@ async function genAI(){
     S.B._fallback=false;
     S.B.genError=null;
   }
-
+ 
   result=result.slice(0,b.qcnt).map((q,i)=>({
     id:i+1,
     text:q.text||q.txt||'',
@@ -343,14 +342,14 @@ async function genAI(){
     correct:q.correct!==undefined?q.correct:(q.ok!==undefined?q.ok:0),
     explanation:q.explanation||''
   }));
-
+ 
   S.B.gen=result;
   if(!S.B.title)S.B.title=`${tL(S.B.type)}: ${S.B.topic}`;
   S.B.loading=false;
   render();
   toast(`Згенеровано ${result.length} питань`,S.B._fallback?'warn':'ok',3500);
 }
-
+ 
 const QUESTION_BANK = {
   math: {
     'квадратні рівняння': [
@@ -360,6 +359,20 @@ const QUESTION_BANK = {
       {q:'За формулою Вієта для x² + px + q = 0, x₁ · x₂ дорівнює:',opts:['q','−q','p','−p'],c:0,e:'За теоремою Вієта добуток коренів дорівнює q'},
       {q:'Знайдіть корені: x² − 5x + 6 = 0',opts:['2 і 3','−2 і −3','1 і 6','−1 і 6'],c:0,e:'D = 1, x = (5±1)/2 = 2 або 3'},
       {q:'Яке з тверджень про квадратне рівняння хибне?',opts:['Завжди має 2 корені','Може не мати дійсних коренів','Старший коефіцієнт ≠ 0','Має вигляд ax² + bx + c = 0'],c:0,e:'Може не мати дійсних коренів якщо D < 0'},
+      {q:'Якщо D=0, то рівняння має:',opts:['Один корінь','Два різних корені','Не має коренів','Безліч коренів'],c:0,e:'При D=0 один (подвійний) корінь'},
+      {q:'Скоротіть рівняння 2x² − 8x + 6 = 0:',opts:['x² − 4x + 3 = 0','x² − 8x + 3 = 0','x² − 4x + 6 = 0','x² + 4x + 3 = 0'],c:0,e:'Ділимо обидві частини на 2'},
+    ],
+    'тригонометрія': [
+      {q:'Чому дорівнює sin(30°)?',opts:['1/2','√2/2','√3/2','1'],c:0,e:'Це значення треба знати з таблиці тригонометричних функцій'},
+      {q:'Чому дорівнює cos(60°)?',opts:['1/2','√3/2','√2/2','0'],c:0,e:'cos(60°) = sin(30°) = 1/2'},
+      {q:'Основна тригонометрична тотожність:',opts:['sin²α + cos²α = 1','sin α + cos α = 1','sin α · cos α = 1','sin α − cos α = 0'],c:0,e:'sin²α + cos²α = 1 для будь-якого α'},
+      {q:'Чому дорівнює tg(45°)?',opts:['1','√3','1/√3','0'],c:0,e:'tg(45°) = sin(45°)/cos(45°) = 1'},
+      {q:'У якій чверті sin α > 0 і cos α < 0?',opts:['Друга','Перша','Третя','Четверта'],c:0,e:'У 2-й чверті sin додатний, cos від\'ємний'},
+      {q:'Чому дорівнює sin(90°)?',opts:['1','0','1/2','√3/2'],c:0,e:'sin(90°) = 1 (максимум)'},
+      {q:'Перевести 180° в радіани:',opts:['π','π/2','2π','π/3'],c:0,e:'180° = π радіан'},
+      {q:'Період функції sin x:',opts:['2π','π','π/2','4π'],c:0,e:'Період синуса 2π'},
+      {q:'cos(0°) дорівнює:',opts:['1','0','1/2','−1'],c:0,e:'cos(0°) = 1'},
+      {q:'Якщо sin α = 3/5 і α у 1-й чверті, чому дорівнює cos α?',opts:['4/5','−4/5','3/5','5/4'],c:0,e:'cos²α = 1 − 9/25 = 16/25, cos α = 4/5 (у 1-й чверті додатний)'},
     ],
     'похідна': [
       {q:'Похідна функції f(x) = x³ дорівнює:',opts:['3x²','x²','3x','x⁴/4'],c:0,e:'(xⁿ)′ = n · x^(n−1)'},
@@ -367,12 +380,28 @@ const QUESTION_BANK = {
       {q:'Похідна суми функцій дорівнює:',opts:['Сумі похідних','Добутку похідних','Різниці похідних','Не визначається'],c:0,e:'(f+g)′ = f′ + g′'},
       {q:'Похідна f(x) = sin(x) дорівнює:',opts:['cos(x)','−cos(x)','−sin(x)','tg(x)'],c:0,e:'Похідна синуса — косинус'},
       {q:'Геометричний зміст похідної у точці — це:',opts:['Тангенс кута нахилу дотичної','Площа під графіком','Значення функції','Координата точки'],c:0,e:'Похідна — це кутовий коефіцієнт дотичної'},
+      {q:'Похідна f(x) = 5x⁴:',opts:['20x³','5x³','x³','20x⁴'],c:0,e:'(c·xⁿ)′ = c·n·x^(n−1)'},
+      {q:'Похідна f(x) = cos(x):',opts:['−sin(x)','sin(x)','tg(x)','−cos(x)'],c:0,e:'(cos x)′ = −sin x'},
     ],
     'логарифми': [
       {q:'Чому дорівнює log₂(8)?',opts:['3','2','4','8'],c:0,e:'2³ = 8, тому log₂(8) = 3'},
       {q:'log(a · b) дорівнює:',opts:['log(a) + log(b)','log(a) · log(b)','log(a) − log(b)','log(a/b)'],c:0,e:'Логарифм добутку = сума логарифмів'},
       {q:'log(a/b) дорівнює:',opts:['log(a) − log(b)','log(a) + log(b)','log(a) · log(b)','log(b/a)'],c:0,e:'Логарифм частки = різниця логарифмів'},
       {q:'log(aⁿ) дорівнює:',opts:['n · log(a)','log(a) / n','aⁿ','a · log(n)'],c:0,e:'Логарифм степеня = показник × логарифм основи'},
+      {q:'log₃(27) дорівнює:',opts:['3','2','9','27'],c:0,e:'3³ = 27'},
+      {q:'log₅(1) дорівнює:',opts:['0','1','5','undefined'],c:0,e:'log будь-якої основи від 1 = 0'},
+    ],
+    'теорема піфагора': [
+      {q:'У прямокутному трикутнику з катетами 3 і 4, чому дорівнює гіпотенуза?',opts:['5','6','7','25'],c:0,e:'c² = a² + b² = 9 + 16 = 25, c = 5'},
+      {q:'Формула теореми Піфагора:',opts:['a² + b² = c²','a + b = c','a² + b² = c','a · b = c'],c:0,e:'Сума квадратів катетів дорівнює квадрату гіпотенузи'},
+      {q:'Якщо гіпотенуза = 13, один катет = 5, чому дорівнює другий катет?',opts:['12','11','10','8'],c:0,e:'b² = 169 − 25 = 144, b = 12'},
+      {q:'Теорема Піфагора виконується для:',opts:['Прямокутних трикутників','Будь-яких трикутників','Тільки рівнобедрених','Тільки рівносторонніх'],c:0,e:'Лише для прямокутних трикутників'},
+    ],
+    'дроби': [
+      {q:'Скоротіть дріб 6/8:',opts:['3/4','2/3','3/8','4/8'],c:0,e:'Ділимо чисельник і знаменник на 2'},
+      {q:'1/2 + 1/3 дорівнює:',opts:['5/6','2/5','1/6','2/3'],c:0,e:'Спільний знаменник 6: 3/6 + 2/6 = 5/6'},
+      {q:'2/3 · 3/4 дорівнює:',opts:['1/2','2/4','5/7','6/12'],c:0,e:'Перемножуємо: 6/12 = 1/2'},
+      {q:'2/5 ділимо на 1/3:',opts:['6/5','2/15','5/6','3/10'],c:0,e:'Множимо на обернений: 2/5 · 3/1 = 6/5'},
     ],
   },
   ukr: {
@@ -380,45 +409,82 @@ const QUESTION_BANK = {
       {q:'До якої частини мови належить слово «швидко»?',opts:['Прислівник','Прикметник','Іменник','Дієслово'],c:0,e:'Прислівник позначає ознаку дії і відповідає на «як?»'},
       {q:'Що позначає іменник?',opts:['Предмет','Дію','Ознаку','Кількість'],c:0,e:'Іменник позначає предмет, явище або поняття'},
       {q:'Яке слово є дієсловом?',opts:['Бігти','Швидкий','Біг','Швидко'],c:0,e:'Дієслово позначає дію або стан'},
-      {q:'Скільки відмінків в українській мові?',opts:['7','6','8','5'],c:0,e:'В українській мові 7 відмінків, включаючи кличний'},
+      {q:'Скільки відмінків в українській мові?',opts:['7','6','8','5'],c:0,e:'7 відмінків, включаючи кличний'},
+      {q:'«Червоний» — яка частина мови?',opts:['Прикметник','Іменник','Прислівник','Числівник'],c:0,e:'Позначає ознаку предмета'},
+      {q:'«Двадцять» — яка частина мови?',opts:['Числівник','Іменник','Прикметник','Займенник'],c:0,e:'Числівники позначають кількість або порядок'},
     ],
     'фразеологізми': [
       {q:'Що означає фразеологізм «бити байдики»?',opts:['Нічого не робити','Готуватись до уроку','Сваритися','Швидко працювати'],c:0,e:'«Бити байдики» — нічого не робити, ледарювати'},
       {q:'Яке значення має «зарубати на носі»?',opts:['Запам\'ятати','Забути','Образитись','Загубити'],c:0,e:'«Зарубати на носі» — запам\'ятати міцно'},
       {q:'Що означає «крапля в морі»?',opts:['Дуже мало','Дуже багато','Точно в ціль','Завжди'],c:0,e:'«Крапля в морі» — мізерна кількість'},
+      {q:'«Як риба у воді»:',opts:['Впевнено, комфортно','Безпорадно','Нудно','Швидко'],c:0,e:'Означає вільно і впевнено почуватися'},
+      {q:'«Вішати локшину на вуха»:',opts:['Обманювати','Захоплено слухати','Ігнорувати','Сваритися'],c:0,e:'Означає брехати, обманювати'},
+    ],
+    'орфографія': [
+      {q:'Як правильно: «пів-Києва» чи «пів Києва»?',opts:['пів-Києва','пів Києва','півКиєва','пів_Києва'],c:0,e:'Пів- з власними назвами через дефіс'},
+      {q:'Правильно: «привіт» чи «привит»?',opts:['привіт','привит','прівіт','прівит'],c:0,e:'Правильно «привіт»'},
+      {q:'У якому слові пишеться апостроф?',opts:['пір\'я','пиря','пірья','пирья'],c:0,e:'Після губних перед я, ю, є, ї пишеться апостроф'},
+      {q:'Правильний відмінок: «зошита» чи «зошиту»?',opts:['зошита','зошиту','залежить від відмінка','зошитом'],c:0,e:'У родовому відмінку: зошита (конкретний предмет)'},
     ],
   },
   hist: {
     'україна': [
-      {q:'У якому році Україна проголосила незалежність?',opts:['1991','1990','1989','1992'],c:0,e:'24 серпня 1991 року Верховна Рада прийняла Акт проголошення незалежності'},
-      {q:'Хто був першим президентом України?',opts:['Леонід Кравчук','Леонід Кучма','Віктор Ющенко','Михайло Грушевський'],c:0,e:'Леонід Кравчук — перший президент незалежної України (1991-1994)'},
-      {q:'Коли було прийнято Конституцію України?',opts:['28 червня 1996','24 серпня 1991','1 грудня 1991','22 січня 1918'],c:0,e:'Конституція України прийнята 28 червня 1996 року'},
+      {q:'У якому році Україна проголосила незалежність?',opts:['1991','1990','1989','1992'],c:0,e:'24 серпня 1991 року прийнято Акт проголошення незалежності'},
+      {q:'Хто був першим президентом України?',opts:['Леонід Кравчук','Леонід Кучма','Віктор Ющенко','Михайло Грушевський'],c:0,e:'Леонід Кравчук — перший президент (1991-1994)'},
+      {q:'Коли прийнято Конституцію України?',opts:['28 червня 1996','24 серпня 1991','1 грудня 1991','22 січня 1918'],c:0,e:'28 червня 1996 року — День Конституції'},
+      {q:'Коли відбулася Революція Гідності?',opts:['2013-2014','2004','2008','2010'],c:0,e:'Євромайдан почався у листопаді 2013'},
+    ],
+    'козаччина': [
+      {q:'Хто заснував Запорізьку Січ?',opts:['Дмитро Вишневецький','Богдан Хмельницький','Іван Мазепа','Петро Сагайдачний'],c:0,e:'Дмитро Вишневецький — у 1556 році на острові Хортиця'},
+      {q:'Гетьман, який підняв національно-визвольну війну 1648 року:',opts:['Богдан Хмельницький','Іван Мазепа','Іван Сулима','Петро Дорошенко'],c:0,e:'Богдан Хмельницький очолив повстання у 1648'},
+      {q:'Битва під Жовтими Водами відбулася у:',opts:['1648','1654','1709','1775'],c:0,e:'Травень 1648 року, перша велика перемога Хмельницького'},
+    ],
+    'київська русь': [
+      {q:'Хто хрестив Русь?',opts:['Володимир Великий','Ярослав Мудрий','Святослав','Олег'],c:0,e:'У 988 році князь Володимир'},
+      {q:'Перший літописний князь Києва:',opts:['Аскольд','Володимир','Ярослав','Святослав'],c:0,e:'Аскольд і Дір — за літописами правили до Олега'},
+      {q:'«Руська правда» — це:',opts:['Правовий кодекс','Літопис','Релігійний текст','Військовий устав'],c:0,e:'Збірник законів часів Ярослава Мудрого'},
     ],
   },
   cs: {
     'алгоритми': [
       {q:'Складність бульбашкового сортування:',opts:['O(n²)','O(n log n)','O(n)','O(1)'],c:0,e:'Bubble sort у найгіршому випадку O(n²)'},
       {q:'Який алгоритм найшвидший у середньому?',opts:['Quicksort','Bubble sort','Insertion sort','Selection sort'],c:0,e:'Quicksort має середню складність O(n log n)'},
-      {q:'Що таке рекурсія?',opts:['Функція викликає сама себе','Цикл for','Умовний оператор','Тип даних'],c:0,e:'Рекурсія — техніка, коли функція викликає сама себе'},
+      {q:'Що таке рекурсія?',opts:['Функція викликає сама себе','Цикл for','Умовний оператор','Тип даних'],c:0,e:'Рекурсія — техніка коли функція викликає сама себе'},
+      {q:'Складність бінарного пошуку:',opts:['O(log n)','O(n)','O(n²)','O(1)'],c:0,e:'Кожен крок ділимо масив навпіл'},
+      {q:'Що повертає функція без return?',opts:['undefined','null','0','помилку'],c:0,e:'У JS функція без return повертає undefined'},
     ],
     'структури даних': [
-      {q:'Що таке стек?',opts:['LIFO','FIFO','Зв\'язний список','Масив'],c:0,e:'Stack — Last In First Out (останній прийшов — перший вийшов)'},
+      {q:'Що таке стек?',opts:['LIFO','FIFO','Зв\'язний список','Масив'],c:0,e:'Stack — Last In First Out'},
       {q:'Що таке черга?',opts:['FIFO','LIFO','Дерево','Граф'],c:0,e:'Queue — First In First Out'},
+      {q:'Доступ до елемента масиву за індексом — це O(?):',opts:['O(1)','O(n)','O(log n)','O(n²)'],c:0,e:'Прямий доступ — константна складність'},
+      {q:'Що таке хеш-таблиця?',opts:['Структура з парами ключ-значення','Сортований список','Дерево','Стек'],c:0,e:'Hash map — швидкий пошук за ключем'},
+    ],
+    'бази даних': [
+      {q:'Що таке SQL?',opts:['Мова запитів до БД','Тип бази даних','Сервер','Файлова система'],c:0,e:'SQL — Structured Query Language'},
+      {q:'Який оператор обирає всі записи?',opts:['SELECT *','GET ALL','FETCH','READ'],c:0,e:'SELECT * FROM table — обирає всі стовпці і рядки'},
+      {q:'PRIMARY KEY гарантує:',opts:['Унікальність','Швидкість','Розмір','Шифрування'],c:0,e:'Кожен PRIMARY KEY унікальний у таблиці'},
     ],
   },
   phys: {
     'закони ньютона': [
-      {q:'Перший закон Ньютона:',opts:['Тіло зберігає стан спокою або рівномірного руху','F = ma','Дія = протидія','E = mc²'],c:0,e:'Перший закон Ньютона — закон інерції'},
-      {q:'Формула другого закону Ньютона:',opts:['F = ma','F = mg','F = mv','F = m/a'],c:0,e:'Сила дорівнює добутку маси на прискорення'},
-      {q:'Третій закон Ньютона стверджує:',opts:['Дія дорівнює протидії','Сила тяжіння','Закон інерції','Закон збереження'],c:0,e:'Сили взаємодії двох тіл рівні за модулем і протилежні за напрямом'},
+      {q:'Перший закон Ньютона:',opts:['Тіло зберігає стан спокою або рівномірного руху','F = ma','Дія = протидії','E = mc²'],c:0,e:'Перший закон Ньютона — закон інерції'},
+      {q:'Формула другого закону Ньютона:',opts:['F = ma','F = mg','F = mv','F = m/a'],c:0,e:'Сила = маса × прискорення'},
+      {q:'Третій закон Ньютона стверджує:',opts:['Дія дорівнює протидії','Сила тяжіння','Закон інерції','Закон збереження'],c:0,e:'Сили взаємодії двох тіл рівні і протилежні'},
+      {q:'Одиниця вимірювання сили:',opts:['Ньютон','Джоуль','Ват','Паскаль'],c:0,e:'Ньютон (Н) — одиниця сили в СІ'},
     ],
     'енергія': [
-      {q:'Кінетична енергія обчислюється:',opts:['mv²/2','mgh','mc²','F·s'],c:0,e:'Кінетична енергія — енергія рухомого тіла'},
-      {q:'Потенціальна енергія в полі тяжіння:',opts:['mgh','mv²/2','F·t','m·a'],c:0,e:'E_p = mgh, де h — висота над рівнем відліку'},
+      {q:'Кінетична енергія:',opts:['mv²/2','mgh','mc²','F·s'],c:0,e:'Енергія рухомого тіла'},
+      {q:'Потенціальна енергія в полі тяжіння:',opts:['mgh','mv²/2','F·t','m·a'],c:0,e:'E_p = mgh, де h — висота'},
+      {q:'Закон збереження енергії:',opts:['Енергія не зникає, лише перетворюється','Енергія завжди зростає','Енергія = маса','Енергія залежить від часу'],c:0,e:'Загальна енергія замкненої системи стала'},
+    ],
+    'електрика': [
+      {q:'Закон Ома:',opts:['I = U/R','I = U·R','U = I/R','R = U·I'],c:0,e:'Сила струму дорівнює напруга поділена на опір'},
+      {q:'Одиниця вимірювання опору:',opts:['Ом','Вольт','Ампер','Кулон'],c:0,e:'Ом (Ω)'},
+      {q:'Що показує напруга?',opts:['Різницю потенціалів','Силу струму','Опір','Час'],c:0,e:'Напруга — різниця потенціалів між точками'},
     ],
   },
-};
-
+};;
+ 
 function findRelevantQuestions(subjectId,topic){
   const subjectBank=QUESTION_BANK[subjectId]||{};
   const topicLower=(topic||'').toLowerCase().trim();
@@ -436,19 +502,38 @@ function findRelevantQuestions(subjectId,topic){
   }
   return null;
 }
-
+ 
 function localGenerateQuestions(b){
-  const types=b.qtypes||['choice'];
   const out=[];
   const subj=getSub(b.sid);
-  const subjName=subj.n;
-
   const bank=findRelevantQuestions(b.sid,b.topic);
-
+ 
   if(bank&&bank.length>0){
     const shuffled=[...bank].sort(()=>Math.random()-0.5);
-    for(let i=0;i<Math.min(b.qcnt,shuffled.length);i++){
-      const t=shuffled[i];
+    const need=b.qcnt;
+    for(let i=0;i<need;i++){
+      const t=shuffled[i%shuffled.length];
+      const optsCopy=[...t.opts];
+      const correctOpt=optsCopy[t.c];
+      const optsShuffled=[...optsCopy].sort(()=>Math.random()-0.5);
+      const newCorrect=optsShuffled.indexOf(correctOpt);
+      out.push({
+        id:i+1,
+        text:t.q,
+        type:'choice',
+        options:optsShuffled,
+        correct:newCorrect,
+        explanation:t.e
+      });
+    }
+    return out;
+  }
+ 
+  const allBanks=Object.values(QUESTION_BANK[b.sid]||{}).flat();
+  if(allBanks.length>0){
+    const shuffled=[...allBanks].sort(()=>Math.random()-0.5);
+    for(let i=0;i<b.qcnt;i++){
+      const t=shuffled[i%shuffled.length];
       out.push({
         id:i+1,
         text:t.q,
@@ -458,48 +543,18 @@ function localGenerateQuestions(b){
         explanation:t.e
       });
     }
-    for(let i=out.length;i<b.qcnt;i++){
-      const t=shuffled[i%shuffled.length];
-      out.push({
-        id:i+1,
-        text:t.q+' (варіант '+(Math.floor(i/shuffled.length)+1)+')',
-        type:'choice',
-        options:t.opts,
-        correct:t.c,
-        explanation:t.e
-      });
-    }
     return out;
   }
-
+ 
   for(let i=0;i<b.qcnt;i++){
-    const type=types[i%types.length];
-    if(type==='choice'){
-      out.push({
-        id:i+1,
-        text:`[${subjName}] Питання ${i+1} з теми «${b.topic}»`,
-        type:'choice',
-        options:['Варіант А (відредагуйте)','Варіант Б','Варіант В','Варіант Г'],
-        correct:0,
-        explanation:'Шаблонне питання — відредагуйте вручну, або повторіть генерацію через AI'
-      });
-    }else if(type==='truefalse'){
-      out.push({
-        id:i+1,
-        text:`[${subjName}] Твердження ${i+1} з теми «${b.topic}»`,
-        type:'truefalse',
-        options:['Так','Ні'],
-        correct:0,
-        explanation:'Шаблонне — відредагуйте текст і відповідь'
-      });
-    }else{
-      out.push({
-        id:i+1,
-        text:`[${subjName}] Відкрите питання ${i+1}: розкрийте тему «${b.topic}»`,
-        type:'open',
-        explanation:'Очікується розгорнута відповідь учня'
-      });
-    }
+    out.push({
+      id:i+1,
+      text:`Питання ${i+1} з теми «${b.topic}» (${subj.n})`,
+      type:'choice',
+      options:['Варіант 1','Варіант 2','Варіант 3','Варіант 4'],
+      correct:0,
+      explanation:'Шаблонне питання — рекомендуємо повторити генерацію або відредагувати вручну'
+    });
   }
   return out;
 }
