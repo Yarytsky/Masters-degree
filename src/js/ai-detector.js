@@ -1,3 +1,14 @@
+// =====================================================================
+// AI Detector v2 - Production-grade hybrid AI/plagiarism detection
+// =====================================================================
+// Three-layer architecture:
+//   1. Stylometric features (academic)
+//   2. Pattern matching (lexicon-based)
+//   3. Bayesian aggregation with calibrated thresholds
+// =====================================================================
+
+// ============= LANGUAGE DETECTION =============
+
 function detectLanguage(text) {
   const ukrChars = (text.match(/[а-яіїєґА-ЯІЇЄҐ]/g) || []).length;
   const engChars = (text.match(/[a-zA-Z]/g) || []).length;
@@ -8,6 +19,8 @@ function detectLanguage(text) {
   if (ukrRatio < 0.2) return 'en';
   return 'mixed';
 }
+
+// ============= AI MARKER LEXICONS =============
 
 const AI_LEXICON = {
   uk: {
@@ -134,6 +147,8 @@ const HEDGES = {
   en: ['maybe', 'perhaps', 'probably', 'possibly', 'seems', 'appears', 'likely', 'might', 'somewhat', 'somehow', 'kind of', 'sort of'],
 };
 
+// ============= STYLOMETRIC FEATURES =============
+
 function tokenize(text) {
   return text.toLowerCase()
     .replace(/[^\wа-яіїєґА-ЯІЇЄҐ'\- ]/gi, ' ')
@@ -147,6 +162,8 @@ function tokenizeSentences(text) {
   return text.split(/(?<=[.!?…])\s+/).filter(s => s.trim().length > 3);
 }
 
+// Yule's K - characterizes lexical concentration
+// Higher K = more repetitive (AI tends to be lower K)
 function yulesK(tokens) {
   if (tokens.length < 10) return 0;
   const freq = {};
@@ -159,6 +176,7 @@ function yulesK(tokens) {
   return Math.round((10000 * (M2 - N)) / (N * N) * 10) / 10;
 }
 
+// Honoré's R - measures vocabulary richness via hapax legomena
 function honoreR(tokens) {
   if (tokens.length < 20) return 0;
   const freq = {};
@@ -169,6 +187,8 @@ function honoreR(tokens) {
   return Math.round(100 * Math.log(tokens.length) / (1 - V1 / V));
 }
 
+// Moving Average Type-Token Ratio (MATTR)
+// Window-based, more reliable than simple TTR for varying text lengths
 function mattr(tokens, windowSize = 50) {
   if (tokens.length < windowSize) {
     const types = new Set(tokens).size;
@@ -183,6 +203,8 @@ function mattr(tokens, windowSize = 50) {
   }
   return Math.round((sum / count) * 100);
 }
+
+// Burstiness - sentence length variation (key GPTZero metric)
 function burstiness(text) {
   const sentences = tokenizeSentences(text);
   if (sentences.length < 3) return 0;
@@ -193,6 +215,8 @@ function burstiness(text) {
   return mean ? +(stdDev / mean).toFixed(3) : 0;
 }
 
+// Function word distribution chi-squared vs reference
+// AI tends to overuse certain function words ("the", "and", "of")
 const FUNCTION_WORDS = {
   uk: ['і', 'та', 'що', 'як', 'у', 'в', 'на', 'до', 'з', 'із', 'для', 'про', 'або', 'але', 'також', 'тому', 'якщо', 'коли', 'де', 'хто'],
   en: ['the', 'a', 'an', 'and', 'or', 'but', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'as', 'is', 'are', 'was', 'were', 'be'],
@@ -208,6 +232,7 @@ function functionWordDeviation(tokens, lang) {
   return Math.round(chiSq * 10) / 10;
 }
 
+// Punctuation entropy - how varied is punctuation usage
 function punctuationEntropy(text) {
   const puncts = text.match(/[.!?,;:—…\-]/g) || [];
   if (puncts.length < 5) return 0;
@@ -222,6 +247,7 @@ function punctuationEntropy(text) {
   return Math.round(entropy * 100) / 100;
 }
 
+// Sentence start diversity (AI uses similar openers)
 function sentenceStartDiversity(text) {
   const sentences = tokenizeSentences(text);
   if (sentences.length < 4) return 100;
@@ -233,6 +259,7 @@ function sentenceStartDiversity(text) {
   return Math.round((unique / starts.length) * 100);
 }
 
+// ============= PATTERN MATCHING =============
 
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -290,6 +317,7 @@ function detectHedges(text, lang) {
   return countMatches(text, lex);
 }
 
+// ============= REPETITION DETECTION =============
 
 function detectRepetition(text) {
   const sentences = tokenizeSentences(text);
@@ -302,6 +330,7 @@ function detectRepetition(text) {
     ngram_overlap_pct: 0,
   };
 
+  // Sentence-level
   const sigCounts = {};
   sentences.forEach(s => {
     const sig = s.trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 100);
@@ -314,6 +343,7 @@ function detectRepetition(text) {
     }
   });
 
+  // Paragraph-level
   const paras = text.split(/\n\s*\n/).filter(p => p.trim().length > 50);
   const paraSigs = {};
   paras.forEach(p => {
@@ -327,6 +357,7 @@ function detectRepetition(text) {
     }
   });
 
+  // Half-text comparison
   if (text.length >= 400) {
     const half = Math.floor(text.length / 2);
     const a = text.substring(0, half).toLowerCase().replace(/\s+/g, ' ');
@@ -335,6 +366,7 @@ function detectRepetition(text) {
     if (probe.length > 50 && b.includes(probe)) result.half_text_overlap = true;
   }
 
+  // N-gram repetition
   const tokens = tokenize(text);
   if (tokens.length >= 20) {
     const ngrams = {};
@@ -350,10 +382,18 @@ function detectRepetition(text) {
   return result;
 }
 
+// ============= BAYESIAN AGGREGATION =============
+
+// Convert evidence to log-likelihood ratios (LLR)
+// LLR = log(P(evidence | AI) / P(evidence | human))
+// Strong evidence: |LLR| >= 1.0 (likelihood ratio of 2.7+)
+// Medium: 0.5-1.0
+// Weak: 0.2-0.5
 
 function calculateEvidence(features, lang, strict = true) {
   const evidence = [];
 
+  // ---- Repetition (overwhelming evidence of AI/copy-paste)
   const rep = features.repetition;
   if (rep.half_text_overlap) {
     evidence.push({ llr: 3.5, factor: 'Дублювання великих фрагментів тексту', weight: 'critical' });
@@ -372,6 +412,7 @@ function calculateEvidence(features, lang, strict = true) {
     evidence.push({ llr: 0.5, factor: `Помірний повтор n-грам (${rep.ngram_overlap_pct}%)`, weight: 'medium' });
   }
 
+  // ---- AI markers (strong signal)
   const aiMarkers = features.ai_markers;
   const aiDensity = features.word_count ? (aiMarkers.total / features.word_count) * 1000 : 0;
   if (aiDensity > 8) {
@@ -393,6 +434,7 @@ function calculateEvidence(features, lang, strict = true) {
     evidence.push({ llr: 0.7, factor: `Плеоназми/перебільшення (${aiMarkers.pleonasms.total})`, weight: 'medium' });
   }
 
+  // ---- Personal voice (negative evidence — points to human)
   const personal = features.personal_markers;
   const personalDensity = features.word_count ? (personal.total / features.word_count) * 1000 : 0;
   if (personalDensity > 12) {
@@ -442,6 +484,7 @@ function calculateEvidence(features, lang, strict = true) {
     evidence.push({ llr: -0.5, factor: `Різноманітні початки речень`, weight: 'low' });
   }
 
+  // Yule's K — vocabulary concentration (AI low for short texts)
   const yk = features.yules_k;
   if (yk > 0 && features.word_count > 100) {
     if (yk > 200) {
@@ -451,23 +494,27 @@ function calculateEvidence(features, lang, strict = true) {
     }
   }
 
+  // Punctuation entropy — humans use varied punctuation
   if (features.punct_entropy < 1.2 && features.word_count > 80) {
     evidence.push({ llr: 0.5, factor: `Одноманітна пунктуація`, weight: 'low' });
   } else if (features.punct_entropy > 1.8) {
     evidence.push({ llr: -0.4, factor: `Різноманітна пунктуація`, weight: 'low' });
   }
 
+  // Function word distribution (chi-squared deviation)
   const fwd = features.function_word_deviation;
   if (fwd > 0 && fwd < 15 && features.word_count > 100) {
     evidence.push({ llr: 0.5, factor: `Рівномірний розподіл службових слів (типово для AI)`, weight: 'low' });
   }
 
+  // Sentence length
   if (features.avg_sentence_length > 22) {
     evidence.push({ llr: 0.5, factor: `Завищена середня довжина речень`, weight: 'low' });
   } else if (features.avg_sentence_length < 8 && features.sentence_count > 5) {
     evidence.push({ llr: -0.4, factor: `Короткі речення`, weight: 'low' });
   }
 
+  // Word length (formality proxy)
   if (features.avg_word_length > 6.5) {
     evidence.push({ llr: 0.4, factor: `Підвищена формальність (довгі слова)`, weight: 'low' });
   }
@@ -475,23 +522,30 @@ function calculateEvidence(features, lang, strict = true) {
   return evidence;
 }
 
+// Sum LLRs and convert to probability via sigmoid
+// In strict mode, lower the threshold (more sensitive to AI)
 function aggregateBayesian(evidence, prior = 0.5, strictness = 'strict') {
-
-
+  // Adjust prior based on strictness mode
+  // strict: lean toward AI suspicion (0.55)
+  // balanced: neutral (0.50)
+  // lenient: lean toward human innocence (0.45)
   let adjustedPrior;
   if (strictness === 'strict') adjustedPrior = 0.55;
   else if (strictness === 'lenient') adjustedPrior = 0.45;
   else adjustedPrior = 0.50;
 
+  // Convert prior to log-odds
   let logOdds = Math.log(adjustedPrior / (1 - adjustedPrior));
 
+  // Sum log-likelihood ratios
   evidence.forEach(e => {
     logOdds += e.llr;
   });
 
+  // Convert back to probability via sigmoid
   const probability = 1 / (1 + Math.exp(-logOdds));
 
-
+  // Calculate confidence based on evidence strength
   const totalAbsLLR = evidence.reduce((s, e) => s + Math.abs(e.llr), 0);
   const strongEvidence = evidence.filter(e => Math.abs(e.llr) >= 1.0).length;
   let confidence = 'Низька';
@@ -506,6 +560,7 @@ function aggregateBayesian(evidence, prior = 0.5, strictness = 'strict') {
   };
 }
 
+// ============= MAIN ANALYZER =============
 
 function extractFeatures(text) {
   const lang = detectLanguage(text);
@@ -538,14 +593,17 @@ function extractFeatures(text) {
   };
 }
 
+// Public entry point - returns full analysis with verdict
 function localAIAnalysis(text, _stats) {
   const features = extractFeatures(text);
   const evidence = calculateEvidence(features, features.lang, true);
 
+  // Sort evidence by impact
   evidence.sort((a, b) => Math.abs(b.llr) - Math.abs(a.llr));
 
   const result = aggregateBayesian(evidence, 0.5, (typeof S !== 'undefined' && S.aiStrictness) ? S.aiStrictness : 'strict');
 
+  // Build classic structure for compatibility
   const aiSigns = [];
   const humanSigns = [];
   evidence.forEach(e => {
@@ -559,6 +617,7 @@ function localAIAnalysis(text, _stats) {
     humanSigns.push('Текст має ознаки природного письма');
   }
 
+  // Suspicious phrases
   const suspicious = [];
   if (features.repetition.max_sentence_dup >= 2) {
     const sigCounts = {};
@@ -590,6 +649,7 @@ function localAIAnalysis(text, _stats) {
     }
   });
 
+  // Verdict thresholds adapt to strictness setting
   const strictness = (typeof S !== 'undefined' && S.aiStrictness) ? S.aiStrictness : 'strict';
   const thresholds = strictness === 'lenient'
     ? { high: 80, suspicion: 65, mild: 50 }
@@ -663,6 +723,10 @@ function localAIAnalysis(text, _stats) {
   };
 }
 
+// ============= SENTENCE-LEVEL ANALYSIS =============
+
+// Analyze each sentence individually for AI probability
+// Returns array of {sentence, ai_prob, evidence}
 function analyzeSentences(text) {
   const sentences = tokenizeSentences(text);
   if (sentences.length === 0) return [];
@@ -679,7 +743,7 @@ function analyzeSentences(text) {
 
     const evidence = [];
 
-
+    // AI markers in this sentence
     const aiMarkers = detectAIMarkers(sent, lang);
     if (aiMarkers.high_confidence.matched.length > 0) {
       const found = aiMarkers.high_confidence.matched.map(m => m.phrase).slice(0, 2);
@@ -701,6 +765,7 @@ function analyzeSentences(text) {
       });
     }
 
+    // Personal markers in this sentence
     const personal = detectPersonalMarkers(sent, lang);
     if (personal.high_confidence.matched.length > 0) {
       evidence.push({
@@ -715,6 +780,7 @@ function analyzeSentences(text) {
       });
     }
 
+    // Hedges
     const hedges = detectHedges(sent, lang);
     if (hedges.total > 0) {
       evidence.push({
@@ -723,6 +789,7 @@ function analyzeSentences(text) {
       });
     }
 
+    // Sentence length anomaly
     const len = tokens.length;
     if (len > 30) {
       evidence.push({ llr: 0.4, factor: 'Довге речення' });
@@ -730,7 +797,8 @@ function analyzeSentences(text) {
       evidence.push({ llr: -0.3, factor: 'Коротке речення' });
     }
 
-    let logOdds = Math.log(0.55 / 0.45);
+    // Aggregate to probability
+    let logOdds = Math.log(0.55 / 0.45); // strict mode prior
     evidence.forEach(e => logOdds += e.llr);
     const prob = Math.round(100 / (1 + Math.exp(-logOdds)));
 
@@ -746,25 +814,29 @@ function analyzeSentences(text) {
   return results;
 }
 
-
+// Self-critique: re-evaluate the result given its own evidence
+// Returns adjusted probability and reasoning
 function selfCritique(features, initialProb, evidence) {
-
+  // Look for contradictions and edge cases
   const checks = [];
   let adjustment = 0;
 
- 
+  // CHECK 0: Detect "AI mimicking human" trap
+  // Has "I think"/"я думаю" but lacks concrete details (numbers, names, specific events)
   const hasPersonalPronouns = features.personal_markers.high_confidence.total > 0;
   const personalDensity0 = (features.personal_markers.total / Math.max(features.word_count, 1)) * 1000;
   const text = features.sentences.join(' ');
   const hasNumbers = /\b\d{1,4}\b/.test(text);
-
+  // Exclude sentence-start capitals and "Я" — count only mid-sentence proper nouns
   const properNounMatches = text.match(/(?<=[а-яa-z]\s)[А-ЯA-Z][а-яa-z]{2,}/g) || [];
   const hasProperNouns = properNounMatches.length >= 1;
   const hasYears = /\b(19|20)\d{2}\b/.test(text);
   const hasEmotion = features.personal_markers.casual.total >= 1;
   const hasFillers = features.personal_markers.fillers.total >= 1;
 
-
+  // Check for narrative/temporal markers (signs of personal narrative)
+  // AI imitating "I think" rarely uses past-tense narration with time markers
+  // Note: Cyrillic doesn't work well with \b in JS, use explicit boundaries
   const narrativeWords = ['пам\'ятаю','пригадую','вперше','тоді','спочатку','потім','колись','якось','одного разу','останнім часом','минулого','раніше','тогочасний','той час','пішов','прийшов','відкрив','зробив','знайшов','побачив','почув','відчув','згадав','зрозумів','подарували','купили','давно','недавно','вчора','сьогодні','remember','recall','first time','once','when i was','i went','i saw','i heard','i found','i felt'];
   const lowerText = text.toLowerCase();
   let narrativeHits = 0;
@@ -774,15 +846,18 @@ function selfCritique(features, initialProb, evidence) {
     if (m) narrativeHits += m.length;
   });
   const hasNarrativeMarkers = narrativeHits >= 2;
-  const hasQuotedItems = /[«»"'""'']/.test(text);  
+  const hasQuotedItems = /[«»"'""'']/.test(text);  // Names of books, places etc in quotes
 
-
+  // Concrete details = numbers + proper nouns + years + emotion + fillers + narrative + quotes
   const concreteScore = (hasNumbers ? 1 : 0) + (hasProperNouns ? 1 : 0) +
                         (hasYears ? 1 : 0) + (hasEmotion ? 1 : 0) +
                         (hasFillers ? 1 : 0) + (hasNarrativeMarkers ? 2 : 0) +
                         (hasQuotedItems ? 1 : 0);
 
-
+  // Strong AI-mimicking-human signal:
+  // - Heavy use of "I think/in my opinion" (many high_confidence markers)
+  // - But almost no concrete details (concreteScore <= 2)
+  // - Also no narrative markers
   if (features.personal_markers.high_confidence.total >= 5 && concreteScore <= 2 && !hasNarrativeMarkers && features.word_count >= 50) {
     adjustment += 35;
     checks.push({
@@ -799,6 +874,7 @@ function selfCritique(features, initialProb, evidence) {
     });
   }
 
+  // Extreme personal density (>200/1k) without narrative is suspicious
   if (personalDensity0 > 200 && !hasNarrativeMarkers && features.word_count >= 50) {
     adjustment += 20;
     checks.push({
@@ -808,6 +884,7 @@ function selfCritique(features, initialProb, evidence) {
     });
   }
 
+  // If high personal density BUT also narrative markers — likely a real personal story
   if (personalDensity0 > 50 && hasNarrativeMarkers && hasQuotedItems) {
     adjustment -= 15;
     checks.push({
@@ -817,6 +894,7 @@ function selfCritique(features, initialProb, evidence) {
     });
   }
 
+  // Check 1: AI prob high but strong personal voice
   const personalDensity = (features.personal_markers.total / Math.max(features.word_count, 1)) * 1000;
   if (initialProb > 60 && personalDensity > 8) {
     adjustment -= 8;
@@ -827,7 +905,7 @@ function selfCritique(features, initialProb, evidence) {
     });
   }
 
-
+  // Check 2: AI prob low but burstiness very low
   if (initialProb < 40 && features.burstiness < 0.25 && features.sentence_count >= 5) {
     adjustment += 8;
     checks.push({
@@ -837,6 +915,7 @@ function selfCritique(features, initialProb, evidence) {
     });
   }
 
+  // Check 3: Repetition overrides everything
   if (features.repetition.half_text_overlap || features.repetition.max_para_dup >= 2) {
     if (initialProb < 80) {
       const target = 92;
@@ -849,8 +928,9 @@ function selfCritique(features, initialProb, evidence) {
     }
   }
 
+  // Check 4: Very short text - reduce confidence with tiered approach
   if (features.word_count < 30) {
-
+    // Extremely short — pull HARD toward 50% (not enough data)
     const target = 50;
     const delta = (target - initialProb) * 0.6;
     adjustment += delta;
@@ -860,7 +940,7 @@ function selfCritique(features, initialProb, evidence) {
       delta: Math.round(delta),
     });
   } else if (features.word_count < 60) {
-
+    // Short — reduce confidence in extremes
     if (initialProb > 80) adjustment -= 15;
     else if (initialProb > 70) adjustment -= 10;
     else if (initialProb < 20) adjustment += 10;
@@ -871,7 +951,7 @@ function selfCritique(features, initialProb, evidence) {
       delta: initialProb > 80 ? -15 : initialProb > 70 ? -10 : initialProb < 20 ? 10 : initialProb < 30 ? 5 : 0,
     });
   } else if (features.word_count < 100) {
-
+    // Borderline — minor adjustment
     if (initialProb > 85) adjustment -= 7;
     if (initialProb < 15) adjustment += 5;
     checks.push({
@@ -881,6 +961,7 @@ function selfCritique(features, initialProb, evidence) {
     });
   }
 
+  // Check 5: AI markers + casual = AI imitating human
   const casualCount = features.personal_markers.casual.total;
   const aiHigh = features.ai_markers.high_confidence.total;
   if (aiHigh >= 2 && casualCount === 0 && personalDensity < 5) {
@@ -901,17 +982,21 @@ function selfCritique(features, initialProb, evidence) {
   };
 }
 
+// Update localAIAnalysis to use self-critique and sentence analysis
 window._aiBaseAnalysis = localAIAnalysis;
 localAIAnalysis = function(text, _stats) {
   const result = window._aiBaseAnalysis(text, _stats);
   const features = extractFeatures(text);
 
+  // Run self-critique
   const critique = selfCritique(features, result.ai_probability, result.evidence_log || []);
   result.ai_probability = critique.adjusted_prob;
   result.self_critique = critique;
 
+  // Add sentence-level analysis
   result.sentence_analysis = analyzeSentences(text);
 
+  // Re-derive verdict based on adjusted probability (use same thresholds)
   const strictness2 = (typeof S !== 'undefined' && S.aiStrictness) ? S.aiStrictness : 'strict';
   const verdictThresh = strictness2 === 'lenient'
     ? { high: 80, suspicion: 65, mild: 50 }
@@ -934,5 +1019,5 @@ localAIAnalysis = function(text, _stats) {
   return result;
 };
 
-
+// Expose helper for cross-validation when API succeeds
 window._aiFullAnalysis = localAIAnalysis;
