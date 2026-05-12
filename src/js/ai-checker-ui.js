@@ -828,7 +828,7 @@ ${analyzeText}
         headers:{'Content-Type':'application/json'},
         signal:controller.signal,
         body:JSON.stringify({
-          model:'claude-sonnet-4-5',
+          model:'claude-sonnet-4-6',
           max_tokens:maxTokens||1500,
           messages:[{role:'user',content:promptText}]
         })
