@@ -905,7 +905,9 @@ ${analyzeText}
   }
 
   if(!result){
-    result=localAIAnalysis(txt,stats);
+    const _localFn=typeof localAIAnalysis==="function"?localAIAnalysis:window._aiFullAnalysis;
+    if(!_localFn){toast("Помилка: перезавантажте сторінку","warn");S.aiChecking=false;S.aiStages=[];render();return;}
+    result=_localFn(txt,stats);
     result._fallback=true;
     result._apiError=lastErr;
   }
@@ -981,7 +983,9 @@ ${analyzeText}
     S.aiChecking=false;
     S.aiStages=[];
     try{
-      const fallback=localAIAnalysis(txt);
+      const _fn=typeof localAIAnalysis==="function"?localAIAnalysis:window._aiFullAnalysis;
+      if(!_fn)throw new Error("Детектор не завантажено");
+      const fallback=_fn(txt);
       fallback._fallback=true;
       fallback._apiError='Критична помилка: '+fatalErr.message;
       S.aiCheckResult=fallback;
