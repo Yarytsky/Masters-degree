@@ -688,6 +688,7 @@ async function runAICheck(){
   S.aiStages=['stats'];
   render();
 
+  try{
   await new Promise(r=>setTimeout(r,1400));
   S.aiStages=['stats','lex'];render();
   await new Promise(r=>setTimeout(r,1800));
@@ -819,16 +820,20 @@ ${analyzeText}
 
   // Helper: single API call, returns parsed JSON or null
   async function callAPI(promptText,maxTokens){
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),25000);
     try{
       const r=await fetch('/api/claude',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
+        signal:controller.signal,
         body:JSON.stringify({
           model:'claude-sonnet-4-20250514',
           max_tokens:maxTokens||1500,
           messages:[{role:'user',content:promptText}]
         })
       });
+      clearTimeout(timeoutId);
       if(!r.ok){
         let errBody='';
         try{const j=await r.json();errBody=j.error?.message||'';}catch(_){}
@@ -847,6 +852,8 @@ ${analyzeText}
         return {error:'Парсинг: '+parseErr.message};
       }
     }catch(e){
+      clearTimeout(timeoutId);
+      if(e.name==='AbortError')return {error:'timeout'};
       return {error:e.message||'Мережа'};
     }
   }
@@ -904,7 +911,7 @@ ${analyzeText}
   }
 
   S.aiStages=['stats','lex','api','parse'];render();
-  await new Promise(r=>setTimeout(r,1500));
+  await new Promise(r=>setTimeout(r,400));
 
   result.ai_probability=Math.max(0,Math.min(100,Math.round(result.ai_probability||0)));
   if(result.metrics){
@@ -969,6 +976,20 @@ ${analyzeText}
   const verdict=result.ai_probability>=70?'Ймовірно AI':result.ai_probability>=40?'Підозріло':'Ймовірно людина';
   const simNote=similarResults&&similarResults.length>0?` · ${similarResults.length} схожих робіт`:'';
   toast(`Аналіз: ${verdict} (${result.ai_probability}%)${simNote}`,result.ai_probability>=70||similarResults?.length>0?'warn':'ok',4500);
+  }catch(fatalErr){
+    console.error('runAICheck fatal error:',fatalErr);
+    S.aiChecking=false;
+    S.aiStages=[];
+    try{
+      const fallback=localAIAnalysis(txt);
+      fallback._fallback=true;
+      fallback._apiError='Критична помилка: '+fatalErr.message;
+      S.aiCheckResult=fallback;
+    }catch(_){
+      toast('Помилка аналізу: '+fatalErr.message,'warn',5000);
+    }
+    render();
+  }
 }
 
 // ============= EXPORT FUNCTIONS =============
